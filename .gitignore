@@ -1,8 +1,19 @@
 node_modules/
-build/
 dist/
-coverage/
 .DS_Store
 *.log
-.env*
-!.env.example
+
+# Environment — never commit real keys
+.env
+.env.local
+.env.production
+
+# Supabase CLI temp files
+supabase/
+
+# Editor
+.vscode/
+
+# DB setup, docs, seed scripts — not needed in repo
+docs/
+scripts/
