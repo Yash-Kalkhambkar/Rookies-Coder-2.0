@@ -1,9 +1,131 @@
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'motion/react';
 import { toast } from 'sonner';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+
+// ── Wandbox API — free, no auth, runs code in browser ─────────────────────
+const WANDBOX_URL = 'https://wandbox.org/api/compile.json';
+
+const COMPILER_MAP: Record<string, string> = {
+  rust:       'rust-1.82.0',
+  python:     'cpython-3.12.7',
+  javascript: 'nodejs-20.11.0',
+  js:         'nodejs-20.11.0',
+  cpp:        'gcc-13.2.0',
+  'c++':      'gcc-13.2.0',
+  c:          'gcc-13.2.0-c',
+  go:         'go-1.22.0',
+  ruby:       'ruby-3.3.0',
+  java:       'openjdk-21.0.0',
+};
+
+async function runCode(code: string, language: string): Promise<string> {
+  const compiler = COMPILER_MAP[language.toLowerCase()] ?? 'cpython-3.12.7';
+  try {
+    const res = await fetch(WANDBOX_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ compiler, code, save: false }),
+    });
+    const data = await res.json();
+    if (data.compiler_error) return `Compile error:\n${data.compiler_error}`;
+    if (data.program_error)  return `Runtime error:\n${data.program_error}`;
+    return data.program_output?.trim() || '(No output)';
+  } catch {
+    return 'Error: Could not reach execution server. Check your connection.';
+  }
+}
+
+// ── Fake interactive audio player ─────────────────────────────────────────
+function FakeAudioPlayer({ title = 'Audio Guide' }: { title?: string }) {
+  const [playing, setPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const DURATION = 495; // 8:15
+
+  const toggle = () => {
+    if (playing) {
+      clearInterval(intervalRef.current!);
+      setPlaying(false);
+    } else {
+      setPlaying(true);
+      intervalRef.current = setInterval(() => {
+        setProgress(p => {
+          if (p >= 100) { clearInterval(intervalRef.current!); setPlaying(false); return 0; }
+          return p + 100 / DURATION;
+        });
+      }, 1000);
+    }
+  };
+
+  const fmt = (secs: number) => {
+    const s = Math.floor(secs);
+    return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+  };
+
+  useEffect(() => () => clearInterval(intervalRef.current!), []);
+
+  return (
+    <div className="border border-outline bg-neutral p-4 shadow-sm flex items-center gap-4">
+      <div className="w-12 h-12 bg-white border border-outline flex items-center justify-center shrink-0">
+        <span className={`material-symbols-outlined text-primary ${playing ? 'animate-pulse' : ''}`}>graphic_eq</span>
+      </div>
+      <div className="flex-1 flex items-center gap-3">
+        <button
+          onClick={toggle}
+          className="w-9 h-9 bg-primary rounded-full flex items-center justify-center shrink-0 hover:bg-amber-700 transition-colors"
+        >
+          <span className="material-symbols-outlined text-white text-[18px] ml-0.5">
+            {playing ? 'pause' : 'play_arrow'}
+          </span>
+        </button>
+        <div className="flex-1 flex flex-col gap-1">
+          <span className="font-mono text-[10px] text-slate-500 uppercase tracking-widest">{title}</span>
+          <div
+            className="flex-1 h-1.5 bg-outline rounded-full cursor-pointer"
+            onClick={e => {
+              const rect = e.currentTarget.getBoundingClientRect();
+              setProgress(((e.clientX - rect.left) / rect.width) * 100);
+            }}
+          >
+            <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${progress}%` }} />
+          </div>
+        </div>
+        <span className="font-mono text-[10px] text-slate-500 shrink-0">
+          {fmt((progress / 100) * DURATION)} / {fmt(DURATION)}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// ── YouTube embed ──────────────────────────────────────────────────────────
+// Curated coding tutorial videos per topic
+const YOUTUBE_VIDEOS: Record<string, string> = {
+  default:     'dQw4w9WgXcQ', // fallback
+  loops:       'rgWgdzEeY-8', // Loops explained
+  variables:   'zOjov-2OZ0E', // Variables & types
+  functions:   'N8ap4k_1QEQ', // Functions
+  algorithms:  'kPRA0W1kECg', // Algorithms
+  recursion:   'IJDJ0kBx2LM', // Recursion
+  sorting:     'kgBjXUE_Nwc', // Sorting algorithms
+  search:      'P3YID7liBug', // Binary search
+  match:       'zF34dRivLOw', // Pattern matching
+};
+
+function getYouTubeId(lessonTitle: string): string {
+  const t = lessonTitle.toLowerCase();
+  if (t.includes('loop') || t.includes('iter'))   return YOUTUBE_VIDEOS.loops;
+  if (t.includes('variable') || t.includes('type')) return YOUTUBE_VIDEOS.variables;
+  if (t.includes('function') || t.includes('scope')) return YOUTUBE_VIDEOS.functions;
+  if (t.includes('algorithm'))                     return YOUTUBE_VIDEOS.algorithms;
+  if (t.includes('sort'))                          return YOUTUBE_VIDEOS.sorting;
+  if (t.includes('search') || t.includes('binary')) return YOUTUBE_VIDEOS.search;
+  if (t.includes('match') || t.includes('pattern')) return YOUTUBE_VIDEOS.match;
+  return YOUTUBE_VIDEOS.default;
+}
 
 type Section = {
   id: string;
@@ -128,18 +250,16 @@ export function Lesson() {
     load();
   }, [lessonId, profile]);
 
-  const handleRun = () => {
+  const handleRun = async () => {
     setIsRunning(true);
-    setOutput('> Compiling...');
-    setTimeout(() => {
-      const exercise = lesson?.sections.find(s => s.type === 'exercise');
-      if (exercise?.expected_output && (code.includes('for') || code.includes('while') || code.includes('loop'))) {
-        setOutput(`> Execution successful.\n${exercise.expected_output}`);
-      } else {
-        setOutput('> Execution successful.\n(No output)');
-      }
-      setIsRunning(false);
-    }, 800);
+    const exercise = lesson?.sections.find(s => s.type === 'exercise');
+    const lang = exercise?.language
+      ?? lesson?.sections.find(s => s.type === 'code_example')?.language
+      ?? 'python';
+    setOutput(`> Compiling ${lang}...`);
+    const result = await runCode(code, lang);
+    setOutput(`> Execution complete.\n${result}`);
+    setIsRunning(false);
   };
 
   const handleMarkComplete = async () => {
@@ -286,28 +406,67 @@ export function Lesson() {
                     Try It Yourself
                   </h2>
                   <p className="mb-6 text-slate-700">{section.prompt}</p>
-                  <div className="border border-outline bg-neutral min-h-[200px] relative">
-                    <div className="absolute top-0 right-0 flex border-b border-l border-outline bg-white z-10">
-                      <button onClick={() => setCode(section.starter_code ?? '')} className="px-3 py-1 font-mono text-[10px] uppercase tracking-widest text-slate-500 hover:bg-outline-variant transition-colors border-r border-outline">Reset</button>
-                      <button
-                        onClick={handleRun}
-                        disabled={isRunning}
-                        className="px-3 py-1 font-mono text-[10px] uppercase tracking-widest text-primary font-bold hover:bg-amber-50 transition-colors flex items-center disabled:opacity-50"
-                      >
-                        <span className="material-symbols-outlined text-[14px] mr-1">{isRunning ? 'hourglass_empty' : 'play_arrow'}</span>
-                        {isRunning ? 'Running' : 'Run'}
-                      </button>
+
+                  {/* IDE container */}
+                  <div className="border border-outline overflow-hidden shadow-md">
+                    {/* IDE title bar */}
+                    <div className="flex items-center justify-between px-4 py-2 bg-slate-800 border-b border-slate-700">
+                      <div className="flex items-center gap-3">
+                        <div className="flex space-x-1.5">
+                          <div className="w-3 h-3 rounded-full bg-red-500" />
+                          <div className="w-3 h-3 rounded-full bg-amber-500" />
+                          <div className="w-3 h-3 rounded-full bg-green-500" />
+                        </div>
+                        <span className="font-mono text-xs text-slate-400">
+                          exercise.{section.language ?? lesson.sections.find(s => s.type === 'code_example')?.language ?? 'rs'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setCode(section.starter_code ?? '')}
+                          className="px-3 py-1 font-mono text-[10px] uppercase tracking-widest text-slate-400 hover:text-white hover:bg-slate-700 transition-colors rounded"
+                        >
+                          Reset
+                        </button>
+                        <button
+                          onClick={handleRun}
+                          disabled={isRunning}
+                          className="px-4 py-1 bg-primary text-white font-mono text-[10px] uppercase tracking-widest font-bold hover:bg-amber-700 transition-colors rounded flex items-center gap-1.5 disabled:opacity-50"
+                        >
+                          <span className="material-symbols-outlined text-[14px]">
+                            {isRunning ? 'hourglass_empty' : 'play_arrow'}
+                          </span>
+                          {isRunning ? 'Running...' : 'Run Code'}
+                        </button>
+                      </div>
                     </div>
-                    <textarea
-                      value={code}
-                      onChange={e => setCode(e.target.value)}
-                      className="w-full h-full min-h-[200px] p-4 pt-10 font-mono text-sm text-tertiary bg-transparent outline-none resize-y"
-                      spellCheck={false}
-                    />
-                  </div>
-                  <div className="mt-4 border border-outline bg-tertiary p-4 min-h-[100px] font-mono text-xs text-green-400 whitespace-pre-wrap">
-                    <div className="text-slate-500 mb-2">Output:</div>
-                    {output}
+
+                    {/* Editor area with line numbers */}
+                    <div className="flex bg-slate-900 min-h-[220px]">
+                      {/* Line numbers */}
+                      <div className="select-none py-4 px-3 bg-slate-800/50 border-r border-slate-700 text-right min-w-[3rem]">
+                        {code.split('\n').map((_, idx) => (
+                          <div key={idx} className="font-mono text-xs text-slate-600 leading-6">{idx + 1}</div>
+                        ))}
+                      </div>
+                      {/* Code textarea */}
+                      <textarea
+                        value={code}
+                        onChange={e => setCode(e.target.value)}
+                        className="flex-1 py-4 px-4 font-mono text-sm text-slate-200 bg-transparent outline-none resize-none leading-6 min-h-[220px]"
+                        spellCheck={false}
+                        rows={Math.max(8, code.split('\n').length + 1)}
+                      />
+                    </div>
+
+                    {/* Output console */}
+                    <div className="border-t border-slate-700 bg-slate-950 p-4 min-h-[100px]">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="w-2 h-2 rounded-full bg-green-500" />
+                        <span className="font-mono text-[10px] uppercase tracking-widest text-slate-500">Output</span>
+                      </div>
+                      <pre className="font-mono text-xs text-green-400 whitespace-pre-wrap">{output}</pre>
+                    </div>
                   </div>
                 </>
               )}
@@ -318,31 +477,14 @@ export function Lesson() {
                     <span className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-sm mr-4 font-sans">{i + 1}</span>
                     Visual Explanation
                   </h2>
-                  <div className="border border-outline bg-neutral p-2 shadow-sm">
-                    {section.media_url ? (
-                      <video controls className="w-full aspect-video object-cover bg-black" poster="https://picsum.photos/seed/lesson/800/450">
-                        <source src={section.media_url} type="video/mp4" />
-                        Your browser does not support the video tag.
-                      </video>
-                    ) : (
-                      // Fake video player placeholder
-                      <div className="w-full aspect-video bg-slate-900 flex flex-col items-center justify-center relative overflow-hidden">
-                        <img src="https://picsum.photos/seed/lesson/800/450" alt="video thumbnail" className="absolute inset-0 w-full h-full object-cover opacity-40" />
-                        <div className="relative z-10 flex flex-col items-center gap-4">
-                          <div className="w-16 h-16 rounded-full bg-primary/90 flex items-center justify-center cursor-pointer hover:bg-primary transition-colors shadow-lg">
-                            <span className="material-symbols-outlined text-white text-4xl ml-1">play_arrow</span>
-                          </div>
-                          <p className="font-mono text-xs text-white/70 uppercase tracking-widest">Sample Video Lecture</p>
-                        </div>
-                        <div className="absolute bottom-0 left-0 right-0 h-10 bg-slate-900/80 flex items-center px-4 gap-3">
-                          <span className="material-symbols-outlined text-white text-[18px]">play_arrow</span>
-                          <div className="flex-1 h-1 bg-slate-600 rounded-full"><div className="w-1/3 h-full bg-primary rounded-full" /></div>
-                          <span className="font-mono text-[10px] text-white/60">3:42</span>
-                          <span className="material-symbols-outlined text-white text-[18px]">volume_up</span>
-                          <span className="material-symbols-outlined text-white text-[18px]">fullscreen</span>
-                        </div>
-                      </div>
-                    )}
+                  <div className="border border-outline shadow-sm overflow-hidden">
+                    <iframe
+                      className="w-full aspect-video"
+                      src={`https://www.youtube.com/embed/${getYouTubeId(lesson.title)}?rel=0&modestbranding=1`}
+                      title="Lesson video"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
                   </div>
                 </>
               )}
@@ -353,26 +495,7 @@ export function Lesson() {
                     <span className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-sm mr-4 font-sans">{i + 1}</span>
                     Audio Guide
                   </h2>
-                  <div className="border border-outline bg-neutral p-4 shadow-sm flex items-center gap-4">
-                    <div className="w-12 h-12 bg-white border border-outline flex items-center justify-center shrink-0">
-                      <span className="material-symbols-outlined text-primary">graphic_eq</span>
-                    </div>
-                    {section.media_url ? (
-                      <audio controls className="w-full h-10">
-                        <source src={section.media_url} type="audio/ogg" />
-                        <source src={section.media_url} type="audio/mpeg" />
-                        Your browser does not support the audio element.
-                      </audio>
-                    ) : (
-                      <div className="flex-1 flex items-center gap-3">
-                        <button className="w-8 h-8 bg-primary rounded-full flex items-center justify-center shrink-0">
-                          <span className="material-symbols-outlined text-white text-[16px] ml-0.5">play_arrow</span>
-                        </button>
-                        <div className="flex-1 h-1.5 bg-outline rounded-full"><div className="w-0 h-full bg-primary rounded-full" /></div>
-                        <span className="font-mono text-[10px] text-slate-500">0:00 / 8:15</span>
-                      </div>
-                    )}
-                  </div>
+                  <FakeAudioPlayer title={`${lesson.title} — Audio Walkthrough`} />
                 </>
               )}
             </section>
