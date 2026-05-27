@@ -1,30 +1,30 @@
 # Rookie's Coder
 
-A manuscript-themed coding education platform for beginners. Structured learning paths, a live community forum, coding contests, and progress tracking — all backed by Supabase.
+Rookie's Coder is a beginner-friendly coding learning app. It has lessons, a community space, contests, and progress tracking. The app uses Supabase for login and data storage.
 
-## Tech Stack
+## Tech stack
 
-- **Frontend** — React 19, TypeScript, Vite 6
-- **Styling** — Tailwind CSS v4, IBM Plex Mono / Playfair Display
-- **Animation** — Motion (Framer Motion v12)
-- **Charts** — Recharts
-- **Backend** — Supabase (Auth, PostgreSQL, RLS)
-- **Notifications** — Sonner
+- Frontend: React 19, TypeScript, Vite 6
+- Styling: Tailwind CSS v4
+- Animations: Framer Motion
+- Charts: Recharts
+- Backend: Supabase (Auth, PostgreSQL, RLS)
+- Notifications: Sonner
 
-## Features
+## What it includes
 
-- Email/password + GitHub OAuth authentication
-- Role-based access (student / admin)
-- Structured learning path with 6 modules and 11 lessons
-- Interactive code editor with exercise runner
-- Community forum with likes, filters, and real-time thread creation
-- Coding contests with live countdown timers and registration
-- Progress tracking with XP, streaks, skill radar, and activity heatmap
-- Admin dashboard with platform metrics and incident management
+- Login using email/password or GitHub
+- Student and admin access
+- Learning path with modules and lessons
+- Code editor for exercises
+- Community forum with threads and likes
+- Contests with registration and timers
+- Progress tracking for activity and skills
+- Admin dashboard for platform data
 
-## Getting Started
+## Run the app
 
-### 1. Clone and install
+1. Clone the repo:
 
 ```bash
 git clone https://github.com/your-username/rookies-coder.git
@@ -32,29 +32,28 @@ cd rookies-coder
 npm install
 ```
 
-### 2. Set up environment variables
+2. Copy the example env file:
 
 ```bash
 cp .env.example .env
 ```
 
-Fill in your Supabase project URL and publishable key from the Supabase dashboard.
+3. Add your Supabase URL and publishable key to `.env`.
 
-### 3. Set up the database
+4. Set up the database:
 
-Run `docs/SUPABASE_SCHEMA.sql` in the Supabase SQL Editor to create all tables, enums, triggers, and RLS policies.
+- Run `docs/SUPABASE_SCHEMA.sql` in the Supabase SQL editor.
+- Run `docs/SUPABASE_SEED.sql` to add initial data.
 
-Then run `docs/SUPABASE_SEED.sql` to populate the initial modules, lessons, and contests.
-
-### 4. Run the dev server
+5. Start the dev server:
 
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000)
+Open `http://localhost:3000`.
 
-## Demo Accounts
+## Demo accounts
 
 | Role  | Email                          | Password   |
 |-------|--------------------------------|------------|
@@ -65,20 +64,20 @@ Open [http://localhost:3000](http://localhost:3000)
 | User  | priya@rookiescoder.demo        | Demo@1234  |
 | User  | aarav@rookiescoder.demo        | Demo@1234  |
 
-## Project Structure
+## Project structure
 
 ```
 src/
 ├── components/
-│   ├── Layout.tsx          # Sidebar + top nav
-│   └── ProtectedRoute.tsx  # Auth guard
+│   ├── Layout.tsx
+│   └── ProtectedRoute.tsx
 ├── contexts/
-│   └── AuthContext.tsx     # Session + profile state
+│   └── AuthContext.tsx
 ├── lib/
-│   └── supabase.ts         # Supabase client
+│   └── supabase.ts
 └── pages/
     ├── Landing.tsx
-    ├── Login.tsx           # Login + signup tabs
+    ├── Login.tsx
     ├── Dashboard.tsx
     ├── LearningPath.tsx
     ├── Lesson.tsx
@@ -86,23 +85,24 @@ src/
     ├── Progress.tsx
     ├── Contests.tsx
     └── Admin.tsx
+```
 
 docs/
-├── SUPABASE_SCHEMA.sql     # Full DB schema
-├── SUPABASE_SEED.sql       # Initial data
+├── SUPABASE_SCHEMA.sql
+├── SUPABASE_SEED.sql
 ├── PROJECT_OVERVIEW.md
 ├── BACKEND_REQUIREMENTS.md
 └── INTEGRATION_ROADMAP.md
 
 scripts/
-├── seed_sections.cjs       # Lesson content seeder
-├── seed_activity.cjs       # Activity/progress seeder
-├── seed_media_sections.cjs # Video/audio section seeder
-└── fix_rls_and_admin.cjs   # RLS policies + admin setup
+├── seed_sections.cjs
+├── seed_activity.cjs
+├── seed_media_sections.cjs
+└── fix_rls_and_admin.cjs
 ```
 
-## Database Schema
+## Database overview
 
-17 tables covering: profiles, modules, lessons, lesson_sections, user_lesson_progress, daily_activity, milestones, certifications, threads, thread_replies, thread_likes, contests, contest_problems, contest_registrations, contest_submissions, notifications, incidents.
+The database includes tables for profiles, modules, lessons, lesson sections, progress, activity, contests, threads, replies, likes, notifications, and incidents.
 
-Full schema in `docs/SUPABASE_SCHEMA.sql`.
+See `docs/SUPABASE_SCHEMA.sql` for the full schema.
