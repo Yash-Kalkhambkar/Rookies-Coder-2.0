@@ -1,81 +1,92 @@
 # Rookie's Coder
 
-Rookie's Coder is a beginner-friendly coding learning app. It has lessons, a community space, contests, and progress tracking. The app uses Supabase for login and data storage.
+A coding education platform I built for beginners. Think of it as a manuscript-themed learning experience where you can work through lessons, compete in contests, and hang out with other learners.
 
-## Tech stack
+## What's inside
 
-- Frontend: React 19, TypeScript, Vite 6
-- Styling: Tailwind CSS v4
-- Animations: Framer Motion
-- Charts: Recharts
-- Backend: Supabase (Auth, PostgreSQL, RLS)
-- Notifications: Sonner
+This is basically a full-stack learning platform with:
+- Interactive coding lessons with a built-in code runner
+- Community forum where you can ask questions and share stuff
+- Coding contests (because who doesn't like a little competition?)
+- Progress tracking with XP, streaks, and all that gamification goodness
+- Admin panel for managing content and users
 
-## What it includes
+The whole thing has this cool manuscript/editorial vibe going on - I wanted it to feel like you're reading a well-crafted textbook rather than just another coding tutorial site.
 
-- Login using email/password or GitHub
-- Student and admin access
-- Learning path with modules and lessons
-- Code editor for exercises
-- Community forum with threads and likes
-- Contests with registration and timers
-- Progress tracking for activity and skills
-- Admin dashboard for platform data
+## Tech I used
 
-## Run the app
+**Frontend:**
+- React 19 + TypeScript
+- Vite for bundling
+- Tailwind CSS v4 (the new one!)
+- Framer Motion for animations
+- Recharts for the progress charts
+- React Router v7
 
-1. Clone the repo:
+**Backend:**
+- Supabase (handles auth, database, realtime stuff)
+- PostgreSQL with RLS policies
+- Edge Functions for code execution
 
+**Fonts:**
+- IBM Plex Mono for code
+- Playfair Display for headings (gives it that manuscript feel)
+
+## Getting started
+
+1. Clone this thing:
 ```bash
 git clone https://github.com/your-username/rookies-coder.git
 cd rookies-coder
+```
+
+2. Install dependencies:
+```bash
 npm install
 ```
 
-2. Copy the example env file:
-
+3. Set up your environment variables:
 ```bash
 cp .env.example .env
 ```
+Then add your Supabase credentials to `.env`
 
-3. Add your Supabase URL and publishable key to `.env`.
+4. Database setup:
+- Head to your Supabase project dashboard
+- Go to the SQL editor
+- Run `docs/SUPABASE_SCHEMA.sql` first (creates all the tables)
+- Then run `docs/SUPABASE_SEED.sql` (adds some initial data)
 
-4. Set up the database:
-
-- Run `docs/SUPABASE_SCHEMA.sql` in the Supabase SQL editor.
-- Run `docs/SUPABASE_SEED.sql` to add initial data.
-
-5. Start the dev server:
-
+5. Fire it up:
 ```bash
 npm run dev
 ```
 
-Open `http://localhost:3000`.
+Should be running on `http://localhost:3000`
 
 ## Demo accounts
 
-| Role  | Email                          | Password   |
-|-------|--------------------------------|------------|
-| Admin | yashkalkhambkar@gmail.com      | yash@123   |
-| User  | yash@rookiescoder.demo         | Demo@1234  |
-| User  | vanshika@rookiescoder.demo     | Demo@1234  |
-| User  | rohan@rookiescoder.demo        | Demo@1234  |
-| User  | priya@rookiescoder.demo        | Demo@1234  |
-| User  | aarav@rookiescoder.demo        | Demo@1234  |
+You can use these to test things out:
 
-## Project structure
+**Admin:**
+- Email: yashkalkhambkar@gmail.com
+- Password: yash@123
+
+**Regular users:**
+- yash@rookiescoder.demo / Demo@1234
+- vanshika@rookiescoder.demo / Demo@1234
+- rohan@rookiescoder.demo / Demo@1234
+
+(there's a few more in the seed file)
+
+## How it's organized
 
 ```
 src/
-├── components/
-│   ├── Layout.tsx
-│   └── ProtectedRoute.tsx
-├── contexts/
-│   └── AuthContext.tsx
-├── lib/
-│   └── supabase.ts
-└── pages/
+├── components/       # Shared components (Layout, ProtectedRoute)
+├── contexts/         # Auth context
+├── lib/             # Supabase client setup
+└── pages/           # All the main pages
     ├── Landing.tsx
     ├── Login.tsx
     ├── Dashboard.tsx
@@ -85,24 +96,74 @@ src/
     ├── Progress.tsx
     ├── Contests.tsx
     └── Admin.tsx
+
+docs/                # Database schemas and project docs
+scripts/             # Seed scripts for populating data
 ```
 
-docs/
-├── SUPABASE_SCHEMA.sql
-├── SUPABASE_SEED.sql
-├── PROJECT_OVERVIEW.md
-├── BACKEND_REQUIREMENTS.md
-└── INTEGRATION_ROADMAP.md
+## Features breakdown
 
-scripts/
-├── seed_sections.cjs
-├── seed_activity.cjs
-├── seed_media_sections.cjs
-└── fix_rls_and_admin.cjs
-```
+**Learning Path**
+- Modules organized in a timeline view
+- Each lesson has text, code examples, videos, and interactive exercises
+- Code editor with real execution (supports JS, Python, Rust)
+- XP rewards and progress tracking
 
-## Database overview
+**Community**
+- Create threads, reply to discussions
+- Like posts, mark solutions
+- Tag system with AI-powered suggestions
+- Real-time updates
 
-The database includes tables for profiles, modules, lessons, lesson sections, progress, activity, contests, threads, replies, likes, notifications, and incidents.
+**Contests**
+- Timed coding challenges
+- Live leaderboard
+- Submission tracking with verdicts
+- Registration system
 
-See `docs/SUPABASE_SCHEMA.sql` for the full schema.
+**Progress**
+- Activity heatmap (GitHub-style)
+- Skill radar chart
+- XP and streak tracking
+- Certifications when you complete modules
+
+**Admin Panel**
+- User management
+- Content creation/editing
+- Platform analytics
+- Incident tracking
+
+## Database
+
+The schema is pretty straightforward - profiles, modules, lessons, progress tracking, community stuff (threads/replies/likes), contests, and notifications. Everything's protected with RLS policies so users can only see/edit what they should.
+
+Check `docs/SUPABASE_SCHEMA.sql` if you want the full details.
+
+## Scripts
+
+There's a few helper scripts in the `scripts/` folder:
+- `seed_sections.cjs` - Adds lesson content
+- `seed_activity.cjs` - Generates fake activity data
+- `seed_media_sections.cjs` - Adds video/audio sections
+- `fix_rls_and_admin.cjs` - Fixes RLS policies and admin access
+
+Run them with node if you need to populate more data.
+
+## Notes
+
+- The code execution uses Piston API through a Supabase Edge Function
+- AI hints are powered by Google Gemini (you'll need an API key)
+- Notifications update in real-time thanks to Supabase subscriptions
+- The manuscript theme uses custom shadows and serif fonts
+
+## TODO
+
+- [ ] Add more languages to the code runner
+- [ ] Mobile responsive improvements
+- [ ] Dark mode (maybe?)
+- [ ] More contest problems
+- [ ] Email notifications
+
+---
+
+Built this as a learning project. Feel free to use it, fork it, whatever. If you find bugs or have suggestions, open an issue!
