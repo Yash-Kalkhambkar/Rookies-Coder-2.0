@@ -163,6 +163,15 @@ Run them with node if you need to populate more data.
 - [ ] Dark mode (maybe?)
 - [ ] More contest problems
 - [ ] Email notifications
+- [ ] User profile customization (avatar, bio, social links)
+- [ ] Lesson bookmarking / favorites
+- [ ] Weekly digest notifications
+
+## Changelog
+
+### June 2025
+- Improved README with upcoming feature roadmap
+- Minor code cleanup and refactoring
 
 ---
 
