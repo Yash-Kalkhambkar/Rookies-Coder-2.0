@@ -172,6 +172,7 @@ Run them with node if you need to populate more data.
 ### June 2025
 - Improved README with upcoming feature roadmap
 - Minor code cleanup and refactoring
+- Added daily progress notes and streak tracking reminder
 
 ---
 
