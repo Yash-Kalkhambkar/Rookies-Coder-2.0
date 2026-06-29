@@ -169,6 +169,10 @@ Run them with node if you need to populate more data.
 
 ## Changelog
 
+### June 29, 2025
+- Added future improvements roadmap to project docs
+- Minor notes and housekeeping updates
+
 ### June 2025
 - Improved README with upcoming feature roadmap
 - Minor code cleanup and refactoring
