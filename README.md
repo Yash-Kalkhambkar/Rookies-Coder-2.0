@@ -169,6 +169,10 @@ Run them with node if you need to populate more data.
 
 ## Changelog
 
+### June 30, 2025
+- Cleaned up project notes and documentation
+- Reviewed contest and progress page logic
+
 ### June 29, 2025
 - Added future improvements roadmap to project docs
 - Minor notes and housekeeping updates
