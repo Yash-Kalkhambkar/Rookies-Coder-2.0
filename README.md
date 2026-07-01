@@ -169,6 +169,10 @@ Run them with node if you need to populate more data.
 
 ## Changelog
 
+### July 1, 2025
+- Reviewed authentication flow and session handling
+- Updated project notes for onboarding clarity
+
 ### June 30, 2025
 - Cleaned up project notes and documentation
 - Reviewed contest and progress page logic
